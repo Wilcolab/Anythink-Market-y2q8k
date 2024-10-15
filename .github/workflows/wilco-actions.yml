@@ -1,11 +1,11 @@
-on: 
+on:
   pull_request:
     branches:
       - main
 
 jobs:
   wilco:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     timeout-minutes: 10
     name: Pr checks
 
@@ -14,6 +14,8 @@ jobs:
         image: postgres:13
         env:
           POSTGRES_PASSWORD: postgres
+          SECRET_KEY: secret
+          POSTGRES_DB: anythink-market
         ports:
           - 5432:5432
         options: >-
@@ -25,35 +27,22 @@ jobs:
       - name: Check out project
         uses: actions/checkout@v2
 
-      - uses: ruby/setup-ruby@v1
+      - name: Use Python
+        uses: actions/setup-python@v4
         with:
-          working-directory: backend
-          bundler-cache: true
-          
+          python-version: "3.9.13"
+
       - uses: oNaiPs/secrets-to-env-action@v1
         with:
           secrets: ${{ toJSON(secrets) }}
+
+      - name: Setup Node for Wilco Checks
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
 
       - name: Wilco checks
         id: Wilco
         uses: trywilco/actions@main
         with:
           engine: ${{ secrets.WILCO_ENGINE_URL }}
-  Lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - name: Check out project
-        uses: actions/checkout@v2
-      - name: Lint code
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-          cache: 'yarn'
-          cache-dependency-path: frontend/yarn.lock
-      - run: yarn add lint
-      - run: yarn lint
